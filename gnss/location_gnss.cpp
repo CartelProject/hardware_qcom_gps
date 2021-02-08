@@ -92,6 +92,7 @@ static uint32_t configMinGpsWeek(uint16_t minGpsWeek);
 static uint32_t configDeadReckoningEngineParams(const DeadReckoningEngineConfig& dreConfig);
 static uint32_t gnssUpdateSecondaryBandConfig(const GnssSvTypeConfig& secondaryBandConfig);
 static uint32_t gnssGetSecondaryBandConfig();
+static void resetNetworkInfo();
 
 static void updateNTRIPGGAConsent(bool consentAccepted);
 static void enablePPENtripStream(const GnssNtripConnectionParams& params, bool enableRTKEngine);
@@ -102,6 +103,7 @@ static bool measCorrSetCorrections(const GnssMeasurementCorrections gnssMeasCorr
 static void measCorrClose();
 static uint32_t antennaInfoInit(const antennaInfoCb antennaInfoCallback);
 static void antennaInfoClose();
+static uint32_t configEngineRunState(PositioningEngineMask engType, LocEngineRunState engState);
 
 static const GnssInterface gGnssInterface = {
     sizeof(GnssInterface),
@@ -159,6 +161,8 @@ static const GnssInterface gGnssInterface = {
     disablePPENtripStream,
     gnssUpdateSecondaryBandConfig,
     gnssGetSecondaryBandConfig,
+    resetNetworkInfo,
+    configEngineRunState
 };
 
 #ifndef DEBUG_X86
@@ -434,6 +438,12 @@ static void updateBatteryStatus(bool charging) {
     }
 }
 
+static void resetNetworkInfo() {
+    if (NULL != gGnssAdapter) {
+        gGnssAdapter->getSystemStatus()->resetNetworkInfo();
+    }
+}
+
 static void updateSystemPowerState(PowerStateType systemPowerState) {
    if (NULL != gGnssAdapter) {
        gGnssAdapter->updateSystemPowerStateCommand(systemPowerState);
@@ -570,5 +580,13 @@ static void disablePPENtripStream(){
     if (NULL != gGnssAdapter) {
         // Call will be enabled once GnssAdapter impl. is ready.
         gGnssAdapter->disablePPENtripStreamCommand();
+    }
+}
+
+static uint32_t configEngineRunState(PositioningEngineMask engType, LocEngineRunState engState) {
+    if (NULL != gGnssAdapter) {
+        return gGnssAdapter->configEngineRunStateCommand(engType, engState);
+    } else {
+        return 0;
     }
 }

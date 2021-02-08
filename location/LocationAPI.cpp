@@ -132,9 +132,11 @@ void LocationAPI::onRemoveClientCompleteCb (LocationAdapterTypeMask adapterType)
     }
     pthread_mutex_unlock(&gDataMutex);
 
-    if ((true == invokeCallback) && (nullptr != destroyCompleteCb)) {
+    if (invokeCallback) {
         LOC_LOGd("invoke client destroy cb");
-        (destroyCompleteCb) ();
+        if (!destroyCompleteCb) {
+            (destroyCompleteCb) ();
+        }
 
         delete this;
     }
@@ -286,7 +288,7 @@ LocationAPI::destroy(locationApiDestroyCompleteCallback destroyCompleteCb)
 
         gData.clientData.erase(it);
 
-        if ((NULL != destroyCompleteCb) && (false == needToWait)) {
+        if (!needToWait) {
             invokeDestroyCb = true;
         }
     } else {
@@ -295,8 +297,10 @@ LocationAPI::destroy(locationApiDestroyCompleteCallback destroyCompleteCb)
     }
 
     pthread_mutex_unlock(&gDataMutex);
-    if (invokeDestroyCb == true) {
-        (destroyCompleteCb) ();
+    if (invokeDestroyCb) {
+        if (!destroyCompleteCb) {
+            (destroyCompleteCb) ();
+        }
         delete this;
     }
 }
@@ -846,6 +850,21 @@ uint32_t LocationControlAPI::configDeadReckoningEngineParams(
 
     if (gData.gnssInterface != NULL) {
         id = gData.gnssInterface->configDeadReckoningEngineParams(dreConfig);
+    } else {
+        LOC_LOGe("No gnss interface available for Location Control API");
+    }
+
+    pthread_mutex_unlock(&gDataMutex);
+    return id;
+}
+
+uint32_t LocationControlAPI::configEngineRunState(
+        PositioningEngineMask engType, LocEngineRunState engState) {
+    uint32_t id = 0;
+    pthread_mutex_lock(&gDataMutex);
+
+    if (gData.gnssInterface != NULL) {
+        id = gData.gnssInterface->configEngineRunState(engType, engState);
     } else {
         LOC_LOGe("No gnss interface available for Location Control API");
     }
